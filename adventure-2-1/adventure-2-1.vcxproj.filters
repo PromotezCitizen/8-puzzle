@@ -18,12 +18,18 @@
     <ClInclude Include="puzzle8.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="NPuzzle.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="puzzle8.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="NPuzzle.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
