@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "puzzle8.h"
 #include "NPuzzle.h"
 
@@ -135,7 +137,7 @@ void CNPuzzle::SwapVal(BYTE *val1, BYTE *val2) {
 void CNPuzzle::SetMapSize() {
 	printf("타일의 크기를 입력하세요(3 이상) >> ");
 	do {
-		std::ignore = scanf_s("%d", &tiles);
+		std::ignore = scanf("%d", &tiles);
 		if (tiles < 3) printf("3 이상의 값을 입력해주세요 >> ");
 	} while (tiles < 3);
 }
@@ -151,54 +153,76 @@ bool CheckClearFlag(A *a, int arr_size) {
 }
 
 void CNPuzzle::Run() {
-	SetMapSize();
+	 int switch_case = 0;
+	 bool exit_flag_vs = false, exit_flag_main = false, resize_map = true;
 
-	int switch_case = 0;
-	printf("vs player - 0, vs ai - 1, solo play - 2 >> ");
-	scanf_s("%d", &switch_case);
+	while (!exit_flag_main){
+		system("cls");
+		if (resize_map) SetMapSize();
 
-	switch (switch_case) {
-	case __VS_PLAYER:
-		player1 = CreateMap(tiles);
-		player2 = CreateMap(tiles);
+		while (!exit_flag_vs) {
+			system("cls");
+			printf("vs player - 1, vs ai - 2, solo play - 3, exit : e");
 
-		p1_pos = { 0,0 };
-		p2_pos = { 0,0 };
+			switch (_getch()) {
+			case __VS_PLAYER:
+				player1 = CreateMap(tiles);
+				player2 = CreateMap(tiles);
 
-		p1_move = Shuffle(p1_move, player1, &p1_pos, tiles);
-		p2_move = Shuffle(p2_move, player2, &p2_pos, tiles);
+				p1_pos = { 0,0 };
+				p2_pos = { 0,0 };
 
-		PVPMode();
+				p1_move = Shuffle(p1_move, player1, &p1_pos, tiles);
+				p2_move = Shuffle(p2_move, player2, &p2_pos, tiles);
 
-		delete[] player1; player1 = nullptr; p1_move.clear();
-		delete[] player2; player2 = nullptr; p2_move.clear();
-		break;
-	case __VS_AI:
-		player1 = CreateMap(tiles);
-		player2 = CreateMap(tiles);
+				PVPMode();
 
-		p1_pos = { 0,0 };
-		p2_pos = { 0,0 };
+				delete[] player1; player1 = nullptr; p1_move.clear();
+				delete[] player2; player2 = nullptr; p2_move.clear();
+				break;
+			case __VS_AI:
+				player1 = CreateMap(tiles);
+				player2 = CreateMap(tiles);
 
-		p1_move = Shuffle(p1_move, player1, &p1_pos, tiles);
-		p2_move = Shuffle(p2_move, player2, &p2_pos, tiles);
+				p1_pos = { 0,0 };
+				p2_pos = { 0,0 };
 
-		VSAiMode();
+				p1_move = Shuffle(p1_move, player1, &p1_pos, tiles);
+				p2_move = Shuffle(p2_move, player2, &p2_pos, tiles);
 
-		delete[] player1; player1 = nullptr; p1_move.clear();
-		delete[] player2; player2 = nullptr; p2_move.clear();
-		break;
-	case __SOLOPLAY:
-		player1 = CreateMap(tiles);
+				VSAiMode();
 
-		p1_pos = { 0,0 };
+				delete[] player1; player1 = nullptr; p1_move.clear();
+				delete[] player2; player2 = nullptr; p2_move.clear();
+				break;
+			case __SOLOPLAY:
+				player1 = CreateMap(tiles);
 
-		p1_move = Shuffle(p1_move, player1, &p1_pos, tiles);
+				p1_pos = { 0,0 };
 
-		SoloPlayMode();
+				p1_move = Shuffle(p1_move, player1, &p1_pos, tiles);
 
-		delete[] player1; player1 = nullptr; p1_move.clear();
-		break;
+				SoloPlayMode();
+
+				delete[] player1; player1 = nullptr; p1_move.clear();
+				break;
+			case 'e': case 'E':
+				exit_flag_vs = true;
+				break;
+			}
+		}
+		system("cls");
+		printf("맵의 크기를 변경하여 다시 하시겠습니까?\nr : 맵 크기 변경 O , n : 맵 크기 변경 X, else : 종료");
+		char t = _getch();
+		if (t == 'r' || t == 'R') {
+			resize_map = true;
+			exit_flag_vs = false;
+		}
+		else if (t == 'n' || t == 'N') {
+			resize_map = false;
+			exit_flag_vs = false;
+		}
+		else exit_flag_main = true;
 	}
 }
 
@@ -240,7 +264,7 @@ void CNPuzzle::PVPModeLoop(bool *p1_end, bool *p2_end) {
 		*p1_end = CheckClearFlag(player1, tiles);
 		*p2_end = CheckClearFlag(player2, tiles);
 
-		if (p1_end || p2_end) break;
+		if (*p1_end || *p2_end) break;
 
 		p1_temppos = p1_pos;
 		p2_temppos = p2_pos;

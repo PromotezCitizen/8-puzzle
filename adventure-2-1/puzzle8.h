@@ -1,12 +1,10 @@
 #pragma once
-#define _CRT_SECURE_NO_WARNINIGS
 #include <stdio.h>
-#include <iostream>
 #include <stdlib.h>
 #include <tuple>
 #include <random>
-#include <Windows.h>
 #include <thread>
+#include <Windows.h>
 #include <conio.h>
 
 typedef unsigned char BYTE;
@@ -30,9 +28,9 @@ struct Position {
 #ifndef __FIGHT_FLAG
 #define __FIGHT_FLAG
 
-#define __VS_PLAYER 0
-#define __VS_AI		1
-#define __SOLOPLAY	2
+#define __VS_PLAYER 49
+#define __VS_AI		50
+#define __SOLOPLAY	51
 
 #endif
 

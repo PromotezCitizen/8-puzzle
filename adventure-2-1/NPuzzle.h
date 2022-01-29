@@ -1,5 +1,7 @@
 #pragma once
 
+#define _CRT_SECURE_NO_WARNINIGS
+
 class CNPuzzle {
 public:
 	CNPuzzle() {
@@ -16,19 +18,22 @@ public:
 		if (player2 != nullptr) delete[] player2;
 	}
 
-	void PrintMap(BYTE *map, BYTE tiles);
-	void PrintMap(BYTE *map1, BYTE *map2, BYTE tiles);
-	void PrintVector(std::vector<BYTE> freq);
-	void SetMapSize();
-
 	void Run();
 
 protected:
+	void PrintMap(BYTE *map, BYTE tiles);
+	void PrintMap(BYTE *map1, BYTE *map2, BYTE tiles);
+
+	void PrintVector(std::vector<BYTE> freq);
+
+	void SetMapSize();
+
+	BYTE *CreateMap(int tiles);
+
 	void SwapVal(BYTE *val1, BYTE *val2);
 	std::vector<BYTE> Shuffle(std::vector<BYTE> movefreq, BYTE *map, struct Position *pos, int tiles);
 	std::vector<BYTE> ShuffleDat(std::vector<BYTE> movefreq, BYTE *map, struct Position *pos, struct Position temppos, int tiles, char direction);
 	void AutoMove(BYTE *map, struct Position *pos, int tiles, char direction);
-	BYTE *CreateMap(int tiles);
 
 	std::vector<BYTE> MakeFreqVector(std::vector<BYTE> freq, char user_input, BYTE *map, struct Position pos, struct Position temppos, int tiles, bool is_player_move);
 	std::vector<BYTE> MakeFreqVector(std::vector<BYTE> freq, BYTE direction, BYTE *map, struct Position pos, struct Position temppos, int tiles);
@@ -52,4 +57,3 @@ private:
 
 	int tiles = 0;
 };
-
