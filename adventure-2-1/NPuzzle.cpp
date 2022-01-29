@@ -1,18 +1,5 @@
 #include "puzzle8.h"
 #include "NPuzzle.h"
-#include <thread>
-#include <conio.h>
-
-#ifndef __VKEY_SET
-#define __VKEY_SET
-
-#define __VKEY 224
-#define __VKEY_UP 72
-#define __VKEY_DOWN 80
-#define __VKEY_LEFT 75
-#define __VKEY_RIGHT 77
-
-#endif
 
 void CNPuzzle::PrintMap(BYTE *map, BYTE tiles) {
 	for (BYTE row = 0; row < tiles; row++) {
@@ -32,15 +19,15 @@ void CNPuzzle::PrintMap(BYTE *map1, BYTE *map2, BYTE tiles) {
 	printf("\n");
 }
 
-void CNPuzzle::PrintVector(vector<BYTE> freq) {
+void CNPuzzle::PrintVector(std::vector<BYTE> freq) {
 	for (auto it = freq.begin(); it != freq.end(); it++) printf("%d ", *it);
 	printf("\n");
 }
 
-vector<BYTE> CNPuzzle::Shuffle(vector<BYTE> movefreq, BYTE *map, struct Position *pos, int tiles) {
-	random_device rd;
-	mt19937 gen(rd()); // rd는 srand에서 초기화하는 역할
-	uniform_int_distribution<> dis(0, 3); // 0부터 3까지의 값 중 하나를 생성함.
+std::vector<BYTE> CNPuzzle::Shuffle(std::vector<BYTE> movefreq, BYTE *map, struct Position *pos, int tiles) {
+	std::random_device rd;
+	std::mt19937 gen(rd()); // rd는 srand에서 초기화하는 역할
+	std::uniform_int_distribution<> dis(0, 3); // 0부터 3까지의 값 중 하나를 생성함.
 	char direction = 0;
 
 	struct Position temppos = { 0,0 };
@@ -52,7 +39,7 @@ vector<BYTE> CNPuzzle::Shuffle(vector<BYTE> movefreq, BYTE *map, struct Position
 	return movefreq;
 }
 
-vector<BYTE> CNPuzzle::ShuffleDat(vector<BYTE> movefreq, BYTE *map, struct Position *pos, struct Position temppos, int tiles, char direction) {
+std::vector<BYTE> CNPuzzle::ShuffleDat(std::vector<BYTE> movefreq, BYTE *map, struct Position *pos, struct Position temppos, int tiles, char direction) {
 	switch (direction) {
 	case UP:
 		if (--(pos->_row) < 0)	++(pos->_row);
@@ -95,13 +82,13 @@ void CNPuzzle::AutoMove(BYTE *map, struct Position *pos, int tiles, char directi
 
 BYTE *CNPuzzle::CreateMap(int tiles) {
 	BYTE *map = new BYTE[tiles * tiles];
-	fill_n(map, tiles * tiles, 0);
+	std::fill_n(map, tiles * tiles, 0);
 	for (BYTE idx = 1; idx < tiles * tiles; idx++) map[idx] = idx;
 
 	return map;
 }
 
-vector<BYTE> CNPuzzle::MakeFreqVector(vector<BYTE> freq, char user_input, BYTE *map, struct Position pos, struct Position temppos, int tiles, bool is_player_move) {
+std::vector<BYTE> CNPuzzle::MakeFreqVector(std::vector<BYTE> freq, char user_input, BYTE *map, struct Position pos, struct Position temppos, int tiles, bool is_player_move) {
 	switch (user_input) {
 	case 'w': case 'W':
 		if (*(freq.end() - 1) == DOWN)	freq.pop_back();
@@ -125,14 +112,10 @@ vector<BYTE> CNPuzzle::MakeFreqVector(vector<BYTE> freq, char user_input, BYTE *
 
 	SwapVal(map + (p1_pos._row * tiles + p1_pos._col), map + (temppos._row * tiles + temppos._col));;
 
-	//if (freq.size() < 1)					freq.push_back(direction);
-	//else if (*(freq.end() - 1) == direct)	freq.pop_back();
-	//else									freq.push_back(direction);
-
 	return freq;
 }
 
-vector<BYTE> CNPuzzle::MakeFreqVector(vector<BYTE> freq, BYTE direction, BYTE *map, struct Position pos, struct Position temppos, int tiles) {
+std::vector<BYTE> CNPuzzle::MakeFreqVector(std::vector<BYTE> freq, BYTE direction, BYTE *map, struct Position pos, struct Position temppos, int tiles) {
 	BYTE direct = ((direction % 2) == 0 ? ((direction / 2) == 0 ? DOWN : UP) : ((direction / 2) == 0 ? RIGHT : LEFT));
 
 	SwapVal(map + (pos._row * tiles + pos._col), map + (temppos._row * tiles + temppos._col));
@@ -151,18 +134,11 @@ void CNPuzzle::SwapVal(BYTE *val1, BYTE *val2) {
 
 void CNPuzzle::SetMapSize() {
 	printf("타일의 크기를 입력하세요(3 이상) >> ");
-	ignore = scanf_s("%d",  &tiles);
+	do {
+		std::ignore = scanf_s("%d", &tiles);
+		if (tiles < 3) printf("3 이상의 값을 입력해주세요 >> ");
+	} while (tiles < 3);
 }
-
-
-#ifndef __FIGHT_FLAG
-#define __FIGHT_FLAG
-
-#define __VS_PLAYER 0
-#define __VS_AI		1
-#define __SOLOPLAY	2
-
-#endif
 
 template <typename A>
 bool CheckClearFlag(A *a, int arr_size) {
@@ -175,6 +151,8 @@ bool CheckClearFlag(A *a, int arr_size) {
 }
 
 void CNPuzzle::Run() {
+	SetMapSize();
+
 	int switch_case = 0;
 	printf("vs player - 0, vs ai - 1, solo play - 2 >> ");
 	scanf_s("%d", &switch_case);
@@ -243,16 +221,24 @@ void CNPuzzle::AIThread(bool *ai_break_flag, bool *player_break_flag) {
 }
 
 void CNPuzzle::PVPMode() {
+	bool p1_end = false, p2_end = false;
+
+	PVPModeLoop(&p1_end, &p2_end);
+
+	system("cls");
+	if (p1_end) printf("player1 승리\n");
+	else printf("player2 승리\n");
+}
+
+void CNPuzzle::PVPModeLoop(bool *p1_end, bool *p2_end) {
 	struct Position p1_temppos;
 	struct Position p2_temppos;
-
-	bool p1_end = false, p2_end = false;
 
 	while (true) {
 		system("cls");
 		PrintMap(player1, player2, tiles);
-		p1_end = CheckClearFlag(player1, tiles);
-		p2_end = CheckClearFlag(player2, tiles);
+		*p1_end = CheckClearFlag(player1, tiles);
+		*p2_end = CheckClearFlag(player2, tiles);
 
 		if (p1_end || p2_end) break;
 
@@ -301,19 +287,27 @@ void CNPuzzle::PVPMode() {
 			break;
 		}
 	}
-	system("cls");
-	if (p1_end) printf("player1 승리\n");
-	else printf("player2 승리\n");
 }
 
 void CNPuzzle::VSAiMode() {
-	bool *ai_break_flag = new bool, *player_break_flag = new bool;
-	*ai_break_flag = false;			*player_break_flag = false;
+	bool ai_break_flag = false, player_break_flag = false;
 
-	thread th(&CNPuzzle::AIThread, this, ai_break_flag, player_break_flag); // ai
+	std::thread th(&CNPuzzle::AIThread, this, &ai_break_flag, &player_break_flag); // ai
 
+	VSAiModeLoop(&ai_break_flag);
+
+	th.join();
+
+	if (ai_break_flag == false) player_break_flag = true;
+
+	system("cls");
+	PrintMap(player1, player2, tiles);
+	if (player_break_flag == true)									printf("플레이어 승\n");
+	else if (ai_break_flag == true && player_break_flag == true)	printf("AI 승\n");
+}
+
+void CNPuzzle::VSAiModeLoop(bool *ai_break_flag) {
 	struct Position temppos;
-
 	char get_ch = 0;
 
 	while (!CheckClearFlag(player1, tiles)) {
@@ -349,15 +343,6 @@ void CNPuzzle::VSAiMode() {
 			break;
 		}
 	}
-
-	th.join();
-
-	if (*ai_break_flag == false) *player_break_flag = true;
-
-	system("cls");
-	PrintMap(player1, player2, tiles);
-	if (*player_break_flag == true)									printf("플레이어 승\n");
-	else if (*ai_break_flag == true && *player_break_flag == true)	printf("AI 승\n");
 }
 
 void CNPuzzle::SoloPlayMode() {

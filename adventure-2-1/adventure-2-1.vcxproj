@@ -145,7 +145,6 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NPuzzle.cpp" />
-    <ClCompile Include="puzzle8.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
