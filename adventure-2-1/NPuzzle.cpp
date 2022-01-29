@@ -1,5 +1,18 @@
 #include "puzzle8.h"
 #include "NPuzzle.h"
+#include <thread>
+#include <conio.h>
+
+#ifndef __VKEY_SET
+#define __VKEY_SET
+
+#define __VKEY 224
+#define __VKEY_UP 72
+#define __VKEY_DOWN 80
+#define __VKEY_LEFT 75
+#define __VKEY_RIGHT 77
+
+#endif
 
 void CNPuzzle::PrintMap(BYTE *map, BYTE tiles) {
 	for (BYTE row = 0; row < tiles; row++) {
@@ -34,26 +47,6 @@ vector<BYTE> CNPuzzle::Shuffle(vector<BYTE> movefreq, BYTE *map, struct Position
 
 	for (UINT cnt = 0; cnt < 100; cnt++) {
 		movefreq = ShuffleDat(movefreq, map, pos, *pos, tiles, dis(gen));
-		//direction = dis(gen);
-		//temppos = *pos;
-		//switch (direction) {
-		//case UP:
-		//	if (--(pos->_row) < 0)	++(pos->_row);
-		//	else					movefreq = MakeFreqVector(movefreq, direction, map, *pos, temppos, tiles);
-		//	break;
-		//case LEFT:
-		//	if (--(pos->_col) < 0)	++(pos->_col);
-		//	else					movefreq = MakeFreqVector(movefreq, direction, map, *pos, temppos, tiles);
-		//	break;
-		//case DOWN:
-		//	if (++(pos->_row) > tiles - 1)	--(pos->_row);
-		//	else							movefreq = MakeFreqVector(movefreq, direction, map, *pos, temppos, tiles);
-		//	break;
-		//case RIGHT:
-		//	if (++(pos->_col) > tiles - 1)	--(pos->_col);
-		//	else							movefreq = MakeFreqVector(movefreq, direction, map, *pos, temppos, tiles);
-		//	break;
-		//}
 	}
 
 	return movefreq;
@@ -106,6 +99,37 @@ BYTE *CNPuzzle::CreateMap(int tiles) {
 	for (BYTE idx = 1; idx < tiles * tiles; idx++) map[idx] = idx;
 
 	return map;
+}
+
+vector<BYTE> CNPuzzle::MakeFreqVector(vector<BYTE> freq, char user_input, BYTE *map, struct Position pos, struct Position temppos, int tiles, bool is_player_move) {
+	switch (user_input) {
+	case 'w': case 'W':
+		if (*(freq.end() - 1) == DOWN)	freq.pop_back();
+		else							freq.push_back(UP);
+		break;
+	case 'a': case 'A':
+		if (*(freq.end() - 1) == RIGHT) freq.pop_back();
+		else							freq.push_back(LEFT);
+		break;
+	case 's': case 'S':
+		if (*(freq.end() - 1) == UP)	freq.pop_back();
+		else							freq.push_back(DOWN);
+		break;
+	case 'd': case 'D':
+		if (*(freq.end() - 1) == LEFT)	freq.pop_back();
+		else							freq.push_back(RIGHT);
+		break;
+	default:
+		break;
+	}
+
+	SwapVal(map + (p1_pos._row * tiles + p1_pos._col), map + (temppos._row * tiles + temppos._col));;
+
+	//if (freq.size() < 1)					freq.push_back(direction);
+	//else if (*(freq.end() - 1) == direct)	freq.pop_back();
+	//else									freq.push_back(direction);
+
+	return freq;
 }
 
 vector<BYTE> CNPuzzle::MakeFreqVector(vector<BYTE> freq, BYTE direction, BYTE *map, struct Position pos, struct Position temppos, int tiles) {
@@ -165,9 +189,8 @@ void CNPuzzle::Run() {
 
 		p1_move = Shuffle(p1_move, player1, &p1_pos, tiles);
 		p2_move = Shuffle(p2_move, player2, &p2_pos, tiles);
-		printf("\n");
 
-		PrintMap(player1, player2, tiles);
+		PVPMode();
 
 		delete[] player1; player1 = nullptr; p1_move.clear();
 		delete[] player2; player2 = nullptr; p2_move.clear();
@@ -179,29 +202,10 @@ void CNPuzzle::Run() {
 		p1_pos = { 0,0 };
 		p2_pos = { 0,0 };
 
-		ignore = Shuffle(p1_move, player1, &p1_pos, tiles);
+		p1_move = Shuffle(p1_move, player1, &p1_pos, tiles);
 		p2_move = Shuffle(p2_move, player2, &p2_pos, tiles);
-		printf("\n");
 
-		PrintMap(player1, player2, tiles);
-
-		while (!p2_move.empty()) {
-			BYTE saved_move = *(p2_move.end() - 1);
-			BYTE direction = saved_move % 2 == 0 ? (saved_move / 2 == 0 ? DOWN : UP) : (saved_move / 2 == 0 ? RIGHT : LEFT);
-			p2_move.pop_back();
-			AutoMove(player2, &p2_pos, tiles, direction);
-			PrintMap(player1, player2, tiles);
-			if (CheckClearFlag(player1, tiles)) {
-				printf("ÇÃ·¹ÀÌ¾î ½Â\n");
-				break;
-			}
-			if (CheckClearFlag(player2, tiles)) {
-				printf("AI ½Â\n");
-				break;
-			}
-			Sleep(100);
-			system("cls");
-		}
+		VSAiMode();
 
 		delete[] player1; player1 = nullptr; p1_move.clear();
 		delete[] player2; player2 = nullptr; p2_move.clear();
@@ -211,11 +215,179 @@ void CNPuzzle::Run() {
 
 		p1_pos = { 0,0 };
 
-		PrintMap(player1, tiles);
-		PrintVector(p1_move);
-		printf("%d %d\n", p1_pos._row, p1_pos._col);
+		p1_move = Shuffle(p1_move, player1, &p1_pos, tiles);
+
+		SoloPlayMode();
 
 		delete[] player1; player1 = nullptr; p1_move.clear();
 		break;
 	}
+}
+
+void CNPuzzle::AIThread(bool *ai_break_flag, bool *player_break_flag) {
+	while (!p2_move.empty() && (*player_break_flag == false)) {
+		OutputDebugString(L"¸Þ½ÃÁö\n");
+		BYTE saved_move = *(p2_move.end() - 1);
+		BYTE direction = saved_move % 2 == 0 ? (saved_move / 2 == 0 ? DOWN : UP) : (saved_move / 2 == 0 ? RIGHT : LEFT);
+		p2_move.pop_back();
+		AutoMove(player2, &p2_pos, tiles, direction);
+		system("cls");
+		PrintMap(player1, player2, tiles);
+		if (CheckClearFlag(player2, tiles)) {
+			*ai_break_flag = true;
+			break;
+		}
+		*ai_break_flag = false;
+		Sleep(1000);
+	}
+}
+
+void CNPuzzle::PVPMode() {
+	struct Position p1_temppos;
+	struct Position p2_temppos;
+
+	bool p1_end = false, p2_end = false;
+
+	while (true) {
+		system("cls");
+		PrintMap(player1, player2, tiles);
+		p1_end = CheckClearFlag(player1, tiles);
+		p2_end = CheckClearFlag(player2, tiles);
+
+		if (p1_end || p2_end) break;
+
+		p1_temppos = p1_pos;
+		p2_temppos = p2_pos;
+
+		switch (_getch()) {
+		case 'w': case 'W':
+			if (--p1_pos._row < 0)	++p1_pos._row;
+			else					SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (p1_temppos._row * tiles + p1_temppos._col));
+			break;
+		case 'a': case 'A':
+			if (--p1_pos._col < 0)	++p1_pos._col;
+			else					SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (p1_temppos._row * tiles + p1_temppos._col));
+			break;
+		case 's': case 'S':
+			if (++p1_pos._row > tiles - 1)	--p1_pos._row;
+			else							SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (p1_temppos._row * tiles + p1_temppos._col));
+			break;
+		case 'd': case 'D':
+			if (++p1_pos._col > tiles - 1)	--p1_pos._col;
+			else							SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (p1_temppos._row * tiles + p1_temppos._col));
+			break;
+		case __VKEY:
+		{
+			switch (_getch()) {
+			case __VKEY_UP:
+				if (--p2_pos._row < 0)	++p2_pos._row;
+				else					SwapVal(player2 + (p2_pos._row * tiles + p2_pos._col), player2 + (p2_temppos._row * tiles + p2_temppos._col));
+				break;
+			case __VKEY_LEFT:
+				if (--p2_pos._col < 0)	++p2_pos._col;
+				else					SwapVal(player2 + (p2_pos._row * tiles + p2_pos._col), player2 + (p2_temppos._row * tiles + p2_temppos._col));
+				break;
+			case __VKEY_DOWN:
+				if (++p2_pos._row > tiles - 1)	--p2_pos._row;
+				else							SwapVal(player2 + (p2_pos._row * tiles + p2_pos._col), player2 + (p2_temppos._row * tiles + p2_temppos._col));
+				break;
+			case __VKEY_RIGHT:
+				if (++p2_pos._col > tiles - 1)	--p2_pos._col;
+				else							SwapVal(player2 + (p2_pos._row * tiles + p2_pos._col), player2 + (p2_temppos._row * tiles + p2_temppos._col));
+				break;
+			}
+		}
+		default:
+			break;
+		}
+	}
+	system("cls");
+	if (p1_end) printf("player1 ½Â¸®\n");
+	else printf("player2 ½Â¸®\n");
+}
+
+void CNPuzzle::VSAiMode() {
+	bool *ai_break_flag = new bool, *player_break_flag = new bool;
+	*ai_break_flag = false;			*player_break_flag = false;
+
+	thread th(&CNPuzzle::AIThread, this, ai_break_flag, player_break_flag); // ai
+
+	struct Position temppos;
+
+	char get_ch = 0;
+
+	while (!CheckClearFlag(player1, tiles)) {
+		system("cls");
+		PrintMap(player1, player2, tiles);
+		temppos = p1_pos;
+		get_ch = _getch();
+		switch (get_ch) {
+		case 'w': case 'W':
+			if (--p1_pos._row < 0)	++p1_pos._row;
+			else					p1_move = MakeFreqVector(p1_move, get_ch, player1, p1_pos, temppos, tiles, true);
+			break;
+		case 'a': case 'A':
+			if (--p1_pos._col < 0)	++p1_pos._col;
+			else					p1_move = MakeFreqVector(p1_move, get_ch, player1, p1_pos, temppos, tiles, true);
+			break;
+		case 's': case 'S':
+			if (++p1_pos._row > tiles - 1)	--p1_pos._row;
+			else							p1_move = MakeFreqVector(p1_move, get_ch, player1, p1_pos, temppos, tiles, true);
+			break;
+		case 'd': case 'D':
+			if (++p1_pos._col > tiles - 1)	--p1_pos._col;
+			else							p1_move = MakeFreqVector(p1_move, get_ch, player1, p1_pos, temppos, tiles, true);
+			break;
+		case 'h': case 'H':
+			printf("%s\n", *(p1_move.end() - 1) % 2 == 0 ? *(p1_move.end() - 1) / 2 == 0 ? "DOWN" : "UP" : *(p1_move.end() - 1) / 2 == 0 ? "RIGHT" : "LEFT");
+			Sleep(100);
+			break;
+		default:
+			break;
+		}
+		if (*ai_break_flag) {
+			break;
+		}
+	}
+
+	th.join();
+
+	if (*ai_break_flag == false) *player_break_flag = true;
+
+	system("cls");
+	PrintMap(player1, player2, tiles);
+	if (*player_break_flag == true)									printf("ÇÃ·¹ÀÌ¾î ½Â\n");
+	else if (*ai_break_flag == true && *player_break_flag == true)	printf("AI ½Â\n");
+}
+
+void CNPuzzle::SoloPlayMode() {
+	struct Position temppos;
+
+	while (!CheckClearFlag(player1, tiles)) {
+		system("cls");
+		PrintMap(player1, tiles);
+		temppos = p1_pos;
+		switch (_getch()) {
+		case 'w': case 'W':
+			if (--p1_pos._row < 0)	++p1_pos._row;
+			else					SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (temppos._row * tiles + temppos._col));
+			break;
+		case 'a': case 'A':
+			if (--p1_pos._col < 0)	++p1_pos._col;
+			else					SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (temppos._row * tiles + temppos._col));
+			break;
+		case 's': case 'S':
+			if (++p1_pos._row > tiles - 1)	--p1_pos._row;
+			else							SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (temppos._row * tiles + temppos._col));
+			break;
+		case 'd': case 'D':
+			if (++p1_pos._col > tiles - 1)	--p1_pos._col;
+			else							SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (temppos._row * tiles + temppos._col));
+			break;
+		default:
+			break;
+		}
+	}
+	system("cls");
+	PrintMap(player1, tiles);
 }
