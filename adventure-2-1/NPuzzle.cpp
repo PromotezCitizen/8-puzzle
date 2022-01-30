@@ -251,7 +251,7 @@ void CNPuzzle::PVPMode() {
 
 	system("cls");
 	if (p1_end) printf("player1 ½Â¸®\n");
-	else printf("player2 ½Â¸®\n");
+	else		printf("player2 ½Â¸®\n");
 }
 
 void CNPuzzle::PVPModeLoop(bool *p1_end, bool *p2_end) {
