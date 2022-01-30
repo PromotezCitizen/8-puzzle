@@ -371,29 +371,32 @@ void CNPuzzle::VSAiModeLoop(bool *ai_break_flag) {
 
 void CNPuzzle::SoloPlayMode() {
 	struct Position temppos;
-
+	char get_ch = 0;
 	while (!CheckClearFlag(player1, tiles)) {
 		system("cls");
 		PrintMap(player1, tiles);
 		temppos = p1_pos;
-		switch (_getch()) {
+		get_ch = _getch();
+		switch (get_ch) {
 		case 'w': case 'W':
 			if (--p1_pos._row < 0)	++p1_pos._row;
-			else					SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (temppos._row * tiles + temppos._col));
+			else					p1_move = MakeFreqVector(p1_move, get_ch, player1, p1_pos, temppos, tiles, true);
 			break;
 		case 'a': case 'A':
 			if (--p1_pos._col < 0)	++p1_pos._col;
-			else					SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (temppos._row * tiles + temppos._col));
+			else					p1_move = MakeFreqVector(p1_move, get_ch, player1, p1_pos, temppos, tiles, true);
 			break;
 		case 's': case 'S':
 			if (++p1_pos._row > tiles - 1)	--p1_pos._row;
-			else							SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (temppos._row * tiles + temppos._col));
+			else							p1_move = MakeFreqVector(p1_move, get_ch, player1, p1_pos, temppos, tiles, true);
 			break;
 		case 'd': case 'D':
 			if (++p1_pos._col > tiles - 1)	--p1_pos._col;
-			else							SwapVal(player1 + (p1_pos._row * tiles + p1_pos._col), player1 + (temppos._row * tiles + temppos._col));
+			else							p1_move = MakeFreqVector(p1_move, get_ch, player1, p1_pos, temppos, tiles, true);
 			break;
-		default:
+		case 'h': case 'H':
+			printf("%s\n", *(p1_move.end() - 1) % 2 == 0 ? *(p1_move.end() - 1) / 2 == 0 ? "DOWN" : "UP" : *(p1_move.end() - 1) / 2 == 0 ? "RIGHT" : "LEFT");
+			Sleep(100);
 			break;
 		}
 	}
